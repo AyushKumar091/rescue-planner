@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>User</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<style>
+body {
+    margin:0;
+    font-family:'Segoe UI', sans-serif;
+    background:#020617;
+    color:#e2e8f0;
+}
+
+.container {
+    display:grid;
+    grid-template-columns:420px 1fr;
+    height:100vh;
+}
+
+.panel {
+    padding:20px;
+    overflow:auto;
+    border-right:1px solid #1e293b;
+}
+
+.card {
+    background:#0f172a;
+    padding:16px;
+    margin-bottom:12px;
+    border-radius:12px;
+    border:1px solid #1e293b;
+}
+
+.title {
+    font-size:16px;
+    font-weight:700;
+    margin-bottom:10px;
+}
+
+.step {
+    font-size:14px;
+    font-weight:700;
+    margin-bottom:6px;
+}
+
+.done { color:#22c55e; }
+.active { color:#facc15; }
+
+button, select {
+    width:100%;
+    padding:8px;
+    margin-top:8px;
+}
+
+#map { height:100%; }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="panel">
+
+<h3>Report Emergency</h3>
+
+<select id="type">
+<option value="ambulance">Medical</option>
+<option value="fire">Fire</option>
+</select>
+
+<button onclick="clearAll()">Clear</button>
+
+<div id="cards"></div>
+
+</div>
+
+<div id="map"></div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+
+// 🗺️ INIT MAP
+let map = L.map('map').setView([13.0827,80.2707],12);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+.addTo(map);
+
+// 🚨 Emergency icon
+const emergencyIcon = L.icon({
+    iconUrl: "https://cdn-icons-png.flaticon.com/512/595/595067.png",
+    iconSize: [34,34]
+});
+
+let emMarkers = {};
+let vehMarkers = {};
+let stateMemory = {};
+
+// 🔥 NEW: POSITION QUEUE SYSTEM
+let positionQueues = {};
+let currentPositions = {};
+
+// 🖱️ ADD EMERGENCY
+map.on("click", async e => {
+    let type = document.getElementById("type").value;
+
+    await fetch("/add_emergency",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            lat:e.latlng.lat,
+            lng:e.latlng.lng,
+            type:type
+        })
+    });
+});
+
+// 🔁 FETCH DATA (NO ANIMATION HERE)
+setInterval(async ()=>{
+
+    let data = await (await fetch("/get_emergencies")).json();
+    let html = "";
+
+    for(let i=0;i<data.length;i++){
+
+        let e = data[i];
+        let coords=[e.lat,e.lng];
+        let label="E"+(i+1);
+
+        if(!stateMemory[i]){
+            stateMemory[i]={assigned:false,enroute:false,reached:false};
+        }
+
+        // 🚨 EMERGENCY MARKER
+        if(!emMarkers[i]){
+            emMarkers[i]=L.marker(coords,{icon:emergencyIcon})
+            .addTo(map)
+            .bindTooltip(label,{permanent:true});
+        }
+
+        let vehicle="--";
+        let status="Waiting";
+
+        if(e.assigned){
+
+            vehicle = e.assigned;
+            stateMemory[i].assigned = true;
+            status = "Vehicle Assigned";
+
+            let pos = await (await fetch(`/get_vehicle_position/${vehicle}`)).json();
+
+            if(pos.length===2){
+
+                // 🚑 CREATE VEHICLE MARKER
+                if(!vehMarkers[vehicle]){
+
+                    let iconHTML = e.type==="ambulance" ? "➕" : "🚒";
+
+                    let icon = L.divIcon({
+                        html:`<div style="font-size:22px">${iconHTML}</div>`,
+                        className:""
+                    });
+
+                    vehMarkers[vehicle]=L.marker(pos,{icon:icon})
+                    .addTo(map);
+
+                    currentPositions[vehicle] = pos;
+                    positionQueues[vehicle] = [];
+                }
+
+                // 🔥 PUSH TO QUEUE (NOT DIRECT MOVE)
+                if(positionQueues[vehicle]){
+                    positionQueues[vehicle].push(pos);
+                }
+
+                let d = map.distance(pos,coords);
+
+                if(d < 30){
+                    status = "Vehicle Reached";
+                } else {
+                    status = "Vehicle En Route";
+                }
+            }
+        }
+
+        html += `
+        <div class="card">
+            <div class="title">${label} → ${vehicle}</div>
+            <div class="step">Status: ${status}</div>
+        </div>
+        `;
+    }
+
+    document.getElementById("cards").innerHTML = html;
+
+},300); // faster fetch, smoother feed
+
+
+// 🔥 SMOOTH ANIMATION LOOP (SEPARATE ENGINE)
+function animateVehicles(){
+
+    for(let vid in vehMarkers){
+
+        let queue = positionQueues[vid];
+
+        if(queue && queue.length > 0){
+
+            let next = queue.shift();
+            let current = currentPositions[vid];
+
+            if(current){
+
+                let lat = current[0] + (next[0] - current[0]) * 0.2;
+                let lng = current[1] + (next[1] - current[1]) * 0.2;
+
+                let newPos = [lat, lng];
+
+                vehMarkers[vid].setLatLng(newPos);
+                currentPositions[vid] = newPos;
+            }
+        }
+    }
+
+    requestAnimationFrame(animateVehicles);
+}
+
+animateVehicles(); // 🚀 START ENGINE
+
+
+// 🧹 CLEAR
+async function clearAll(){
+    await fetch("/user_reset",{method:"POST"});
+    location.reload();
+}
+
+</script>
+
+</body>
+</html>

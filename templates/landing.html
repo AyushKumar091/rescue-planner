@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Emergency System</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #020617, #0f172a);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        h1 {
+            margin-bottom: 40px;
+            font-size: 32px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 30px;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        .card {
+            padding: 25px 40px;
+            border-radius: 12px;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            cursor: pointer;
+            transition: 0.3s;
+            text-align: center;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+            border-color: #38bdf8;
+        }
+
+        .title {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .desc {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Emergency Response System</h1>
+
+<div class="buttons">
+
+    <a href="/user">
+        <div class="card">
+            <div class="title">User Portal</div>
+            <div class="desc">Report Emergency</div>
+        </div>
+    </a>
+
+    <a href="/control">
+        <div class="card">
+            <div class="title">Control Unit</div>
+            <div class="desc">Monitor & Dispatch</div>
+        </div>
+    </a>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Control Unit</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<style>
+body {
+    margin:0;
+    font-family:'Segoe UI';
+    background:#0B0F1A;
+    color:#e2e8f0;
+}
+
+.container {
+    display:grid;
+    grid-template-columns:300px 1fr 300px;
+    height:100vh;
+}
+
+.left,.right {
+    padding:15px;
+    overflow:auto;
+}
+
+.left {border-right:1px solid #1e293b;}
+.right {border-left:1px solid #1e293b;}
+
+#map {
+    height:100vh;
+    width:100%;
+}
+
+/* 🔥 GLASS CARDS */
+.card {
+    background: rgba(18, 24, 38, 0.7);
+    backdrop-filter: blur(10px);
+    padding:12px;
+    margin-bottom:12px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,0.05);
+    transition:0.3s;
+}
+
+/* 🎨 STATUS COLORS */
+.active-emergency {
+    border-left:4px solid #ef4444;
+}
+
+.assigned {
+    color:#22c55e;
+}
+
+.unassigned {
+    color:#facc15;
+}
+
+/* 🔔 notification */
+.notification {
+    position:fixed;
+    top:20px;
+    right:20px;
+    background:#ef4444;
+    padding:10px 15px;
+    border-radius:8px;
+    z-index:999;
+    box-shadow:0 0 15px rgba(255,0,0,0.5);
+}
+
+/* Button styling */
+button {
+    padding:10px 15px;
+    background:#ef4444;
+    border:none;
+    border-radius:8px;
+    color:white;
+    cursor:pointer;
+    margin-top:10px;
+    width:100%;
+}
+
+button:hover {
+    background:#dc2626;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- LEFT PANEL -->
+<div class="left">
+
+<div class="card">Active: <b id="count">0</b></div>
+<div class="card">Busy: <b id="busy">0</b></div>
+<div class="card">Free: <b id="free">0</b></div>
+
+<div class="card">
+<h4>Active Emergencies</h4>
+<div id="emList"></div>
+</div>
+
+<div class="card">
+<h4>History</h4>
+<div id="historyList"></div>
+</div>
+
+<!-- 🔥 FIXED: Analytics panel added -->
+<div class="card">
+<h4>Analytics</h4>
+<div id="stats">
+Completed: 0<br>
+Avg Response: 0s
+</div>
+</div>
+
+</div>
+
+<!-- MAP -->
+<div id="map"></div>
+
+<!-- RIGHT PANEL -->
+<div class="right">
+
+<div class="card">
+<h4>Vehicles</h4>
+<div id="vehList"></div>
+</div>
+
+<button onclick="clearAll()">Reset System</button>
+
+</div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+</html>

@@ -1,0 +1,101 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #020617;
+    color: #e2e8f0;
+}
+
+/* START SCREEN */
+#startupScreen {
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    background: #020617;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.startup-box {
+    text-align: center;
+}
+
+.startup-box button {
+    padding: 12px 25px;
+    background: #22c55e;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* MAIN APP */
+#mainApp {
+    display: none;
+}
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px;
+    border-bottom: 1px solid #1e293b;
+}
+
+.live {
+    color: #22c55e;
+}
+
+/* LAYOUT */
+.main {
+    display: flex;
+    height: calc(100vh - 60px);
+}
+
+/* 🔥 STABLE MAP FIX */
+#map {
+    width: 75%;
+    height: 100vh;
+}
+
+/* SIDEBAR */
+.sidebar {
+    width: 25%;
+    padding: 20px;
+    border-left: 1px solid #1e293b;
+}
+
+/* CARDS */
+.card {
+    background: #0f172a;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    border: 1px solid #1e293b;
+}
+
+.highlight {
+    border: 1px solid #22c55e;
+}
+
+select {
+    width: 100%;
+    padding: 8px;
+    background: #020617;
+    color: white;
+}
+.panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 280px;
+    height: 100%;
+    background: #020617;
+    padding: 20px;
+    border-left: 1px solid #1e293b;
+}
+
+.stat {
+    background: #0f172a;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+}
