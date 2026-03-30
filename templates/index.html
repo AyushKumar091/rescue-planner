@@ -1,97 +1,99 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Control Unit</title>
+<title>Emergency Dashboard</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body {
     margin:0;
     font-family:'Segoe UI';
-    background:#0B0F1A;
-    color:#e2e8f0;
+    background:#020617;
+    color:white;
 }
 
+/* 🔔 TOP BAR */
+.topbar {
+    height:50px;
+    background:#020617;
+    border-bottom:1px solid #1e293b;
+    display:flex;
+    align-items:center;
+    padding:0 20px;
+    font-size:14px;
+}
+
+.alert {
+    color:#ef4444;
+    margin-left:20px;
+}
+
+/* LAYOUT */
 .container {
     display:grid;
-    grid-template-columns:300px 1fr 300px;
-    height:100vh;
+    grid-template-columns:260px 1fr 320px;
+    height:calc(100vh - 50px);
 }
 
-.left,.right {
+/* SIDEBAR */
+.sidebar {
+    background:#020617;
     padding:15px;
-    overflow:auto;
+    border-right:1px solid #1e293b;
 }
 
-.left {border-right:1px solid #1e293b;}
-.right {border-left:1px solid #1e293b;}
-
+/* MAP */
 #map {
-    height:100vh;
-    width:100%;
+    height:100%;
 }
 
-/* 🔥 GLASS CARDS */
+/* RIGHT PANEL */
+.right {
+    background:#020617;
+    padding:15px;
+    border-left:1px solid #1e293b;
+}
+
+/* CARDS */
 .card {
-    background: rgba(18, 24, 38, 0.7);
-    backdrop-filter: blur(10px);
-    padding:12px;
-    margin-bottom:12px;
-    border-radius:12px;
-    border:1px solid rgba(255,255,255,0.05);
-    transition:0.3s;
+    background:#0f172a;
+    border-radius:10px;
+    padding:10px;
+    margin-bottom:10px;
 }
 
-/* 🎨 STATUS COLORS */
-.active-emergency {
-    border-left:4px solid #ef4444;
-}
+/* VEHICLE STATUS */
+.available { color:#22c55e; }
+.busy { color:#facc15; }
+.unavailable { color:#ef4444; }
 
-.assigned {
-    color:#22c55e;
-}
-
-.unassigned {
-    color:#facc15;
-}
-
-/* 🔔 notification */
-.notification {
-    position:fixed;
-    top:20px;
-    right:20px;
-    background:#ef4444;
-    padding:10px 15px;
-    border-radius:8px;
-    z-index:999;
-    box-shadow:0 0 15px rgba(255,0,0,0.5);
-}
-
-/* Button styling */
+/* BUTTON */
 button {
-    padding:10px 15px;
+    width:100%;
+    padding:10px;
     background:#ef4444;
     border:none;
     border-radius:8px;
     color:white;
     cursor:pointer;
-    margin-top:10px;
-    width:100%;
-}
-
-button:hover {
-    background:#dc2626;
 }
 </style>
 </head>
 
 <body>
 
+<!-- 🔔 TOP BAR -->
+<div class="topbar">
+🚑 Emergency Response Dashboard
+<span class="alert" id="alertBar">No active alerts</span>
+</div>
+
 <div class="container">
 
-<!-- LEFT PANEL -->
-<div class="left">
+<!-- LEFT -->
+<div class="sidebar">
 
 <div class="card">Active: <b id="count">0</b></div>
 <div class="card">Busy: <b id="busy">0</b></div>
@@ -107,21 +109,12 @@ button:hover {
 <div id="historyList"></div>
 </div>
 
-<!-- 🔥 FIXED: Analytics panel added -->
-<div class="card">
-<h4>Analytics</h4>
-<div id="stats">
-Completed: 0<br>
-Avg Response: 0s
-</div>
-</div>
-
 </div>
 
 <!-- MAP -->
 <div id="map"></div>
 
-<!-- RIGHT PANEL -->
+<!-- RIGHT -->
 <div class="right">
 
 <div class="card">
@@ -129,7 +122,12 @@ Avg Response: 0s
 <div id="vehList"></div>
 </div>
 
-<button onclick="clearAll()">Reset System</button>
+<div class="card">
+<h4>Analytics</h4>
+<canvas id="chart"></canvas>
+</div>
+
+<button onclick="clearAll()">Reset</button>
 
 </div>
 

@@ -2,8 +2,20 @@ from flask import Flask, render_template, request, jsonify
 import threading
 import time
 import requests
+import joblib
 
 app = Flask(__name__)
+
+# ---------------- AI MODEL ----------------
+
+model = joblib.load("model.pkl")
+
+def encode_severity(s):
+    return {
+        "Minor":0,
+        "Serious":1,
+        "Fatal":2
+    }.get(s,0)
 
 # ---------------- DATA ----------------
 
@@ -90,7 +102,7 @@ def get_vehicle_path(vid):
     return jsonify(vehicle_paths.get(vid, []))
 
 
-# ---------------- ASSIGNMENT ----------------
+# ---------------- 🤖 AI ASSIGNMENT ----------------
 
 def assign_logic(eid):
 
@@ -98,10 +110,9 @@ def assign_logic(eid):
     if not emergency:
         return
 
-    best_vehicle = None
-    best_time = float("inf")
-    best_path = None
+    candidates = []
 
+    # 🔍 get all valid vehicles
     for v in vehicles:
         if v["busy"] or v["type"] != emergency["type"]:
             continue
@@ -115,16 +126,55 @@ def assign_logic(eid):
             res = requests.get(url).json()
             route = res["routes"][0]
 
-            if route["duration"] < best_time:
-                best_time = route["duration"]
-                best_vehicle = v
-                best_path = route["geometry"]["coordinates"]
+            candidates.append({
+                "vehicle": v,
+                "time": route["duration"],
+                "distance": route["distance"],
+                "path": route["geometry"]["coordinates"]
+            })
 
         except:
             continue
 
-    if not best_vehicle:
+    if not candidates:
         return
+
+    # 🤖 AI-INSPIRED SCORING (NO BIAS)
+    best = None
+    best_score = float("inf")
+
+    severity = encode_severity(emergency.get("severity", "Minor"))
+
+    for c in candidates:
+
+        time_val = c["time"]
+        dist_val = c["distance"]
+
+        # 🎯 weighted scoring
+        score = (
+            0.6 * time_val +
+            0.3 * dist_val +
+            0.1 * severity * 100
+        )
+
+        # 🤖 ML refinement (light influence)
+        try:
+            features = [[dist_val, dist_val, time_val, time_val, severity]]
+            pred = model.predict(features)[0]
+
+            if pred == c["vehicle"]["id"]:
+                score *= 0.9  # slight boost
+
+        except:
+            pass
+
+        if score < best_score:
+            best_score = score
+            best = c
+
+    # 🚑 ASSIGN
+    best_vehicle = best["vehicle"]
+    best_path = best["path"]
 
     vid = best_vehicle["id"]
 
