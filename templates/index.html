@@ -1,133 +1,293 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Emergency Dashboard</title>
+<meta charset="UTF-8">
+<title>Emergency Response Dashboard — AI-Powered</title>
+<meta name="description" content="Intelligent Emergency Rescue Planner — AI dispatcher with A*, Bayesian Network, and Simulated Annealing">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
 <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #020617;
+  --surface: #0f172a;
+  --border:  #1e293b;
+  --accent:  #38bdf8;
+  --danger:  #ef4444;
+  --success: #22c55e;
+  --warn:    #facc15;
+  --muted:   #64748b;
+  --text:    #e2e8f0;
+}
+
 body {
-    margin:0;
-    font-family:'Segoe UI';
-    background:#020617;
-    color:white;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
 }
 
-/* 🔔 TOP BAR */
+/* ─── TOP BAR ─────────────────────────────────────────────────────── */
 .topbar {
-    height:50px;
-    background:#020617;
-    border-bottom:1px solid #1e293b;
-    display:flex;
-    align-items:center;
-    padding:0 20px;
-    font-size:14px;
+  height: 48px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.topbar-title { color: var(--accent); font-size: 14px; }
+.alert-bar { color: var(--danger); margin-left: auto; }
+
+/* AI badge showing active algorithms */
+.ai-badge {
+  background: linear-gradient(90deg, #1e3a5f, #0f2744);
+  border: 1px solid #38bdf840;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--accent);
 }
 
-.alert {
-    color:#ef4444;
-    margin-left:20px;
-}
-
-/* LAYOUT */
+/* ─── LAYOUT ──────────────────────────────────────────────────────── */
 .container {
-    display:grid;
-    grid-template-columns:260px 1fr 320px;
-    height:calc(100vh - 50px);
+  display: grid;
+  grid-template-columns: 240px 1fr 300px;
+  height: calc(100vh - 48px);
 }
 
-/* SIDEBAR */
+/* ─── SIDEBAR ─────────────────────────────────────────────────────── */
 .sidebar {
-    background:#020617;
-    padding:15px;
-    border-right:1px solid #1e293b;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-/* MAP */
-#map {
-    height:100%;
-}
-
-/* RIGHT PANEL */
+/* ─── RIGHT PANEL ─────────────────────────────────────────────────── */
 .right {
-    background:#020617;
-    padding:15px;
-    border-left:1px solid #1e293b;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-/* CARDS */
+/* ─── MAP ─────────────────────────────────────────────────────────── */
+#map { height: 100%; }
+
+/* ─── CARDS ───────────────────────────────────────────────────────── */
 .card {
-    background:#0f172a;
-    border-radius:10px;
-    padding:10px;
-    margin-bottom:10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.card h4 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 8px;
 }
 
-/* VEHICLE STATUS */
-.available { color:#22c55e; }
-.busy { color:#facc15; }
-.unavailable { color:#ef4444; }
-
-/* BUTTON */
-button {
-    width:100%;
-    padding:10px;
-    background:#ef4444;
-    border:none;
-    border-radius:8px;
-    color:white;
-    cursor:pointer;
+/* ─── STAT CHIPS ──────────────────────────────────────────────────── */
+.stat-row { display: flex; gap: 8px; }
+.stat {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
 }
+.stat .val { font-size: 20px; font-weight: 700; color: var(--accent); }
+.stat .lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+/* ─── VEHICLE STATUS DOTS ─────────────────────────────────────────── */
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+.dot-free { background: var(--success); }
+.dot-busy { background: var(--warn); }
+
+/* ─── BAYESIAN PANEL ──────────────────────────────────────────────── */
+.env-panel { display: flex; flex-direction: column; gap: 8px; }
+.env-row   { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+.toggle-group { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.toggle-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.toggle-btn.active { background: var(--accent); color: #020617; }
+.blockage-prob {
+  font-size: 12px;
+  color: var(--warn);
+  font-weight: 600;
+}
+
+/* ─── BUTTONS ─────────────────────────────────────────────────────── */
+button.action-btn {
+  width: 100%;
+  padding: 9px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+button.action-btn:hover { opacity: 0.85; }
+.btn-danger  { background: var(--danger);  color: white; }
+.btn-warn    { background: var(--warn);    color: #020617; }
+.btn-accent  { background: var(--accent);  color: #020617; }
+
+/* ─── BLOCKAGE MODE INDICATOR ─────────────────────────────────────── */
+.blockage-mode-bar {
+  display: none;
+  background: #7c2d12;
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #fca5a5;
+  text-align: center;
+}
+.blockage-mode-bar.active { display: block; }
+
+/* ─── ALGORITHM LOG ───────────────────────────────────────────────── */
+.log-box {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'Consolas', monospace;
+  max-height: 90px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+.log-entry { color: #4ade80; }
+.log-entry.warn { color: var(--warn); }
 </style>
 </head>
 
 <body>
 
-<!-- 🔔 TOP BAR -->
+<!-- TOP BAR -->
 <div class="topbar">
-🚑 Emergency Response Dashboard
-<span class="alert" id="alertBar">No active alerts</span>
+  <span class="topbar-title">🚑 Emergency Response AI</span>
+  <span class="ai-badge">A* · Bayesian · SA · Dynamic Re-routing</span>
+  <span class="alert-bar" id="alertBar">No active alerts</span>
 </div>
 
 <div class="container">
 
-<!-- LEFT -->
+<!-- ── LEFT SIDEBAR ── -->
 <div class="sidebar">
 
-<div class="card">Active: <b id="count">0</b></div>
-<div class="card">Busy: <b id="busy">0</b></div>
-<div class="card">Free: <b id="free">0</b></div>
+  <div class="stat-row">
+    <div class="stat"><div class="val" id="count">0</div><div class="lbl">Active</div></div>
+    <div class="stat"><div class="val" id="busy">0</div><div class="lbl">Busy</div></div>
+    <div class="stat"><div class="val" id="free">0</div><div class="lbl">Free</div></div>
+  </div>
 
-<div class="card">
-<h4>Active Emergencies</h4>
-<div id="emList"></div>
+  <!-- Bayesian Network Control -->
+  <div class="card">
+    <h4>🔮 Bayesian Network — Road Conditions</h4>
+    <div class="env-panel">
+      <div class="env-row">
+        <span>🌧️ Rain</span>
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="btn-rain-off" onclick="setRain(false)">OFF</button>
+          <button class="toggle-btn"        id="btn-rain-on"  onclick="setRain(true)">ON</button>
+        </div>
+      </div>
+      <div class="env-row">
+        <span>🚦 Traffic</span>
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="btn-traffic-low"  onclick="setTraffic('low')">LOW</button>
+          <button class="toggle-btn"        id="btn-traffic-high" onclick="setTraffic('high')">HIGH</button>
+        </div>
+      </div>
+      <div class="env-row">
+        <span style="color:var(--muted);font-size:12px">Blockage Prob</span>
+        <span class="blockage-prob" id="bayes-prob">--</span>
+      </div>
+      <div class="env-row">
+        <span style="color:var(--muted);font-size:12px">Edge Cost Mult</span>
+        <span class="blockage-prob" id="bayes-mult">--</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Emergencies -->
+  <div class="card" style="flex:1">
+    <h4>🚨 Active Emergencies</h4>
+    <div id="emList"></div>
+  </div>
+
+  <!-- History -->
+  <div class="card">
+    <h4>📜 History</h4>
+    <div id="historyList"></div>
+  </div>
+
 </div>
 
-<div class="card">
-<h4>History</h4>
-<div id="historyList"></div>
-</div>
-
-</div>
-
-<!-- MAP -->
+<!-- ── MAP ── -->
 <div id="map"></div>
 
-<!-- RIGHT -->
+<!-- ── RIGHT PANEL ── -->
 <div class="right">
 
-<div class="card">
-<h4>Vehicles</h4>
-<div id="vehList"></div>
-</div>
+  <!-- Blockage mode -->
+  <div class="blockage-mode-bar" id="blockageBar">
+    🚧 BLOCKAGE MODE — Click on map to report a blocked road
+  </div>
 
-<div class="card">
-<h4>Analytics</h4>
-<canvas id="chart"></canvas>
-</div>
+  <!-- Controls -->
+  <div class="card">
+    <h4>⚙️ Controls</h4>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+      <button class="action-btn btn-warn" id="blockageBtn" onclick="toggleBlockageMode()">🚧 Report Blockage</button>
+      <button class="action-btn btn-danger" onclick="clearAll()">🗑️ Reset All</button>
+    </div>
+  </div>
 
-<button onclick="clearAll()">Reset</button>
+  <!-- Vehicles -->
+  <div class="card">
+    <h4>🚑 Vehicles</h4>
+    <div id="vehList"></div>
+  </div>
+
+  <!-- AI Algorithm Log -->
+  <div class="card">
+    <h4>🤖 AI Decision Log</h4>
+    <div class="log-box" id="aiLog">Waiting for dispatch events…</div>
+  </div>
+
+  <!-- Analytics chart -->
+  <div class="card">
+    <h4>📊 Analytics</h4>
+    <canvas id="chart"></canvas>
+  </div>
 
 </div>
 
